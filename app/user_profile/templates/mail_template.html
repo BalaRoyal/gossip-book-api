@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+</head>
+<body>
+    {% autoescape off %}
+    <p>Hi {{name}},</p>
+
+    <p>
+         Welcome to GossipBook. Kinldy click the Activate Link Bellow to activate your account.
+    </p>
+
+    {% endautoescape %}
+    <a href="http://{{domain}}{% url 'user:activate' uidb64=uid token=activation_token %}">Activate</a>
+
+</body>
+</html>
