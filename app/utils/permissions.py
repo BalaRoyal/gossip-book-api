@@ -11,4 +11,7 @@ class IsOwner(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        return obj.user.id == request.user.id
+        try:
+            return obj.user.id == request.user.id
+        except Exception:
+            return obj.voted_by.id == request.user.id
