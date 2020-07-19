@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from .models import User, UserLocation
+from .models import (User,
+                     UserLocation,
+                     Followers)
+
+
+class FollowersSerializer(serializers.ModelSerializer):
+    """
+    Convert user followers table model to and Form JSON
+    """
+    class Meta:
+        model = Followers
+        fields = '__all__'
+
+        read_only_fields = ('created_at', 'updated_at', 'follower')
 
 
 class UserLocationSerializer(serializers.ModelSerializer):
@@ -18,6 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
     """
 
     address = UserLocationSerializer(many=True, read_only=True)
+    followers = FollowersSerializer(many=True, read_only=True)
+    following = FollowersSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -31,7 +46,9 @@ class UserSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'address',
-            'is_active'
+            'is_active',
+            'followers',
+            'following',
         )
 
         read_only_fields = ('id', 'created_at', 'updated_at')

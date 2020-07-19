@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin)
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -78,3 +79,27 @@ class UserLocation(models.Model):
 
     def __str__(self):
         return f"{self.location}"
+
+
+class FollowersModelManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(following=True)
+
+
+class Followers(models.Model):
+    """
+    User followers model
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             related_name='followers', on_delete=models.CASCADE)
+
+    follower = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                 related_name='following', on_delete=models.CASCADE)
+
+    following = models.BooleanField(default=True)
+
+    created_at = models.DateField(auto_now=True)
+    updated_at = models.DateField(auto_now_add=True, null=True, blank=True)
+
+    objects = FollowersModelManager()
