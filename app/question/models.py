@@ -1,5 +1,7 @@
 from django.db import models
-from utils.base_models import BaseGossipQuestionModel
+from utils.base_models import (BaseGossipQuestionModel,
+                               BaseComment)
+from django.contrib.auth import get_user_model
 
 # QUESTION RELATED MODELS
 
@@ -13,9 +15,14 @@ class Question(BaseGossipQuestionModel, models.Model):
     as well as user.
 
     """
+    user = models.ForeignKey(
+        get_user_model(), related_name='questions',
+        on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"{self.title}"
 
-    def __repr__(self):
-        return f"{self.title}"
+class QuestionComment(BaseComment, models.Model):
+    question = models.ForeignKey(
+        Question, related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), related_name='comments',
+        on_delete=models.CASCADE)
