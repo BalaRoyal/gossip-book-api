@@ -1,8 +1,12 @@
 from rest_framework import status
-from rest_framework import generics
-from .models import Question
-from .serializers import QuestionSerializer
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework import generics, viewsets
+from .models import Question, QuestionComment
+from .serializers import (QuestionSerializer,
+                          QuestionCommentSerializer)
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly)
+from rest_framework.reverse import reverse
 from utils.permissions import IsOwner
 from rest_framework.response import Response
 
@@ -12,12 +16,18 @@ class BaseView:
     serializer_class = QuestionSerializer
 
 
-class ListQuestionsAPIView(BaseView, generics.ListCreateAPIView):
-    """
-    Creates API endpoints to view a list of all available questions.
-    """
+class BaseCommentView:
+    queryset = QuestionComment.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = QuestionCommentSerializer
 
-    permission_classes = (IsAuthenticatedOrReadOnly, )
+
+class ListQuestionsAPIView(BaseView, viewsets.GenericViewSet,
+                           generics.ListCreateAPIView):
+    """
+    Creates API endpoints to view a list of all 
+    available questions.17:30, no
+    """
 
     name = 'list_questions'
 
@@ -40,17 +50,42 @@ class ListQuestionsAPIView(BaseView, generics.ListCreateAPIView):
             if tags:
                 instance.tags.add(*tags)
 
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
 
         else:
-            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
-class QuestionDetailAPIView(BaseView,
-                            generics.RetrieveUpdateDestroyAPIView):
+class QuestionDetailAPIView(
+        BaseView,
+        generics.RetrieveUpdateDestroyAPIView):
     """
-    Creates API endpoints to view a list of all available questions.
+    Creates API endpoints to view a list of all 
+    available questions.
     """
 
     name = 'question_details'
+    permission_classes = (IsAuthenticated, IsOwner)
+
+
+class QuestionCommentListCreateAPIView(
+        BaseCommentView,
+        viewsets.GenericViewSet,
+        generics.ListCreateAPIView):
+    """
+    Create and or list question's comments api endpoints.
+    """
+    name = 'question_comment'
+
+
+class QuestionCommentDetailAPIView(
+        BaseCommentView,
+        generics.RetrieveUpdateDestroyAPIView):
+    """
+    Update, delete retrieve single question's 
+    comment api endpoints.
+    """
+    name = 'question_comment_detail'
     permission_classes = (IsAuthenticated, IsOwner)
