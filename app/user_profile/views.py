@@ -1,9 +1,10 @@
 from rest_framework import generics
-from .models import User, UserLocation
+from rest_framework import viewsets
+from .models import User, UserLocation, Followers
 from django.contrib.auth import get_user_model
-from .serializers import UserSerializer, UserLocationSerializer
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsProfileOwner
+from .serializers import UserSerializer, UserLocationSerializer, FollowersSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from .permissions import IsProfileOwner, IsFollowerOwner
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,12 +17,19 @@ from django.utils.encoding import force_bytes, force_text
 from django.contrib.sites.shortcuts import get_current_site
 
 
-class BaseUserView:
+class BaseUserView(viewsets.GenericViewSet):
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
 
 
-class UserListAPIView(BaseUserView, generics.ListCreateAPIView):
+class BaseFollowView(viewsets.GenericViewSet):
+    queryset = Followers.objects.all()
+    serializer_class = FollowersSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+
+class UserListAPIView(BaseUserView,
+                      generics.ListCreateAPIView):
 
     permission_classes = ()
     name = 'list-create-user'
@@ -65,12 +73,14 @@ class UserListAPIView(BaseUserView, generics.ListCreateAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class UserDetailAPIView(BaseUserView, generics.RetrieveUpdateDestroyAPIView):
+class UserDetailAPIView(BaseUserView,
+                        generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated, IsProfileOwner)
     name = 'user_detail'
 
 
-class ConfirmEmailAPIVIew(BaseUserView, generics.RetrieveAPIView):
+class ConfirmEmailAPIVIew(BaseUserView,
+                          generics.RetrieveAPIView):
     """
     Activate user account with a valid token sent to their email.
     """
@@ -104,3 +114,34 @@ class ConfirmEmailAPIVIew(BaseUserView, generics.RetrieveAPIView):
             return Response(data={"message": "Activation link is invalid."}, status=status.HTTP_400_BAD_REQUEST)
 
         return super().update(request, *args, **kwargs)
+
+
+class ListFollowersAPIView(BaseFollowView,
+                           generics.ListCreateAPIView):
+    """
+    List user followers or follow user API Endpoints.
+    """
+
+    def get_queryset(self):
+        return Followers.objects.filter(user=self.request.user, following=True)
+
+    def perform_create(self, serializer):
+        return serializer.save(follower=self.request.user)
+
+
+class ListFollowingAPIView(BaseFollowView,
+                           generics.ListAPIView):
+    """
+    List user followers or follow user API Endpoints.
+    """
+
+    def get_queryset(self):
+        return Followers.objects.filter(follower=self.request.user, following=True)
+
+
+class FollowersDetailView(BaseFollowView, generics.RetrieveUpdateAPIView):
+    """
+    Retrieve and Update user followers
+    """
+
+    permision_classes = (IsAuthenticated, IsFollowerOwner)
