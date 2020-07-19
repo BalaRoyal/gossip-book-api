@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'user_profile',
     'taggit',
     'utils',
-    'question'
+    'question',
+    'gossips'
 ]
 
 MIDDLEWARE = [
