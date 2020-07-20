@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework import generics, viewsets
+
 from .models import(
     Question,
     QuestionComment,
@@ -20,11 +21,27 @@ from rest_framework.permissions import (
 from rest_framework.reverse import reverse
 from utils.permissions import IsOwner
 from rest_framework.response import Response
+import rest_framework_filters as filters
+
+# FILTERS
+
+
+class QuestionFilter(filters.FilterSet):
+    """
+    search through questions
+    """
+    class Meta:
+        model = Question
+        fields = {'title': ['in', 'exact', 'startswith',
+                            'endswith', 'contains', 'icontains',
+                            'istartswith', 'iexact']}
 
 
 class BaseView:
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
+    filter_class = QuestionFilter
+    search_fields = ('title',)
 
 
 class BaseCommentView(viewsets.GenericViewSet):
