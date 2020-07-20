@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin)
 from django.conf import settings
+from taggit.managers import TaggableManager
 
 
 class UserManager(BaseUserManager):
@@ -47,12 +48,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     bio = models.TextField(null=True, blank=True)
     title = models.CharField(max_length=255, null=True, blank=True)
 
+    interested_topics = TaggableManager()
+
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    # add user interested topics
 
     objects = UserManager()
     USERNAME_FIELD = 'email'
