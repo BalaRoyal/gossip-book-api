@@ -17,12 +17,25 @@ gossips_router.register(
     basename=views.GossipCommentListCreateAPIView.name,
     parents_query_lookups=['gossip'])
 
+gossips_router.register(
+    'votes', views.GossipVoteListCreateAPIView,
+    parents_query_lookups=['gossip'],
+    basename='gossip_vote')
+
+comment_router = router.register(
+    'comment', views.GossipCommentDetailAPIView,
+    basename='gossip_comment')
+
+comment_router.register('votes',
+                        views.CommentVoteListCreateAPIView,
+                        basename='comment_votes',
+                        parents_query_lookups=['comment'])
 urlpatterns = [
     path('gossips/<int:pk>', views.GossipDetailAPIView.as_view(),
          name=views.GossipDetailAPIView.name),
 
-    path('comment/<int:pk>', views.GossipCommentDetailAPIView.as_view(),
-         name=views.GossipCommentDetailAPIView.name)
+    path('comment-vote/<int:pk>', views.GossipVoteDetailAPIView,
+         name='gossip_comment_vote')
 
 ]
 
