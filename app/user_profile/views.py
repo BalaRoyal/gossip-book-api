@@ -145,3 +145,61 @@ class FollowersDetailView(BaseFollowView, generics.RetrieveUpdateAPIView):
     """
 
     permision_classes = (IsAuthenticated, IsFollowerOwner)
+
+
+class UserInterestedTopicsListAPIView(BaseUserView, generics.ListAPIView):
+    """
+    List user interested topics.
+    """
+    pass
+
+
+class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    User interested topics API endpoints.
+    """
+
+    permission_classes = (IsAuthenticated, IsProfileOwner)
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+
+    def update(self, request, *args, **kwargs):
+        """
+        Adds interested topics to user account.
+        """
+        topics = None
+
+        if 'interested_topics' in request.data:
+            topics = request.data['interested_topics'].split(',')
+
+        if topics:
+            user = get_user_model().objects.filter(pk=self.request.user.id).first()
+
+            user.interested_topics.add(**topics)
+
+            user.save()
+
+            return Response(data=self.get_serializer(user).data,
+                            status=status.HTTP_200_OK)
+
+        return Response(data={
+            'message': 'Data validation error'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Remove interested topics from user account.
+    def delete(self, request, *args, **kwargs):
+        """
+        Remove some topics from user interested topics.
+        """
+        topics = None
+
+        if 'interested_topics' in request.data:
+            topics = request.data['interested_topics'].split(',')
+            if topics:
+                user = get_user_model().objects.filter(pk=self.request.user.id).first()
+
+                for topic in topics:
+                    user.interested_topics.remove(topic)
+
+                return Response(data=self.get_serializer(user),
+                                status=status.HTTP_200_OK)

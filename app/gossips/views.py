@@ -70,6 +70,19 @@ class ListCreateGossipAPIView(BaseView, viewsets.GenericViewSet,
 
     name = 'list_gossips'
 
+    def get_queryset(self):
+
+        user = self.request.user
+        if not user.is_anonymous:
+            interested_topics = user.interested_topics.all()
+
+            queryset = super().get_queryset().filter(tags__in=interested_topics)
+
+            if len(queryset):
+                return queryset
+
+        return super().get_queryset()
+
     def create(self, request, *args, **kwargs):
         serializer = None
         tags = None

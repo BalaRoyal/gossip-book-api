@@ -4,7 +4,9 @@ from .views import (UserListAPIView,
                     ListFollowersAPIView,
                     ListFollowingAPIView,
                     FollowersDetailView,
-                    ConfirmEmailAPIVIew)
+                    ConfirmEmailAPIVIew,
+                    UserInterestedTopicsAPIView,
+                    UserInterestedTopicsListAPIView)
 
 from rest_framework_jwt.views import obtain_jwt_token
 from utils.routers import NestedRouter
@@ -31,6 +33,11 @@ urlpatterns = [
     path('token-auth/', obtain_jwt_token, name='auth_token'),
     path('confirm-email/<str:token>/<str:uidb64>', ConfirmEmailAPIVIew,
          name=ConfirmEmailAPIVIew.name),
+    path('interested-topics', UserInterestedTopicsListAPIView.as_view({
+        'get': 'list'
+    }),
+        name='interested_topics'),
+    path('interested-topics<int:pk>', UserInterestedTopicsAPIView.as_view())
 ]
 
 urlpatterns += router.urls

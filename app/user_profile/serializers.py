@@ -2,6 +2,13 @@ from rest_framework import serializers
 from .models import (User,
                      UserLocation,
                      Followers)
+from taggit.models import Tag
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
 
 
 class FollowersSerializer(serializers.ModelSerializer):
@@ -33,6 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
     address = UserLocationSerializer(many=True, read_only=True)
     followers = FollowersSerializer(many=True, read_only=True)
     following = FollowersSerializer(many=True, read_only=True)
+    interested_topics = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -49,9 +57,10 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active',
             'followers',
             'following',
+            'interested_topics'
         )
 
-        read_only_fields = ('id', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'is_active')
 
         extra_kwargs = {
             'password': {

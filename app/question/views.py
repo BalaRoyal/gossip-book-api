@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework import generics, viewsets
+from django.contrib.auth.models import AnonymousUser
 
 from .models import(
     Question,
@@ -42,6 +43,7 @@ class BaseView:
     serializer_class = QuestionSerializer
     filter_class = QuestionFilter
     search_fields = ('title',)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 class BaseCommentView(viewsets.GenericViewSet):
@@ -97,6 +99,19 @@ class ListQuestionsAPIView(BaseView, viewsets.GenericViewSet,
         else:
             return Response(data=serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+    def get_queryset(self):
+
+        user = self.request.user
+        if not user.is_anonymous:
+            interested_topics = user.interested_topics.all()
+
+            queryset = super().get_queryset().filter(tags__in=interested_topics)
+
+            if len(queryset):
+                return queryset
+
+        return super().get_queryset()
 
 
 class QuestionDetailAPIView(
