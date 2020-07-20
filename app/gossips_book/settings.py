@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'taggit',
     'utils',
     'question',
-    'gossips'
+    'gossips',
+    'rest_framework_filters',
 ]
 
 MIDDLEWARE = [
@@ -101,6 +102,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework_filters.backends.RestFrameworkFilterBackend',
+    )
 }
 
 JWT_AUTH = {

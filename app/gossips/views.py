@@ -15,12 +15,31 @@ from rest_framework import generics, viewsets
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly)
+import rest_framework_filters as filters
+
+
+class GossipFilter(filters.FilterSet):
+    """
+    search through questions
+    """
+    class Meta:
+        model = Gossip
+        fields = {
+            'title':  ['in', 'exact', 'startswith',
+                       'endswith', 'contains', 'icontains',
+                       'istartswith', 'iexact'],
+            'gossip_description':  ['in', 'exact', 'startswith',
+                                    'endswith', 'contains', 'icontains',
+                                    'istartswith', 'iexact']
+        }
 
 
 class BaseView:
     queryset = Gossip.objects.all()
     permission_classes = (IsAuthenticatedOrReadOnly, )
     serializer_class = GossipSerializer
+    filter_class = GossipFilter
+    search_fields = ('title', 'gossip_description')
 
 
 class BaseCommentView:
