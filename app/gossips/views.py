@@ -130,6 +130,33 @@ class GossipCommentListCreateAPIView(
     """
     name = 'gossip_comments'
 
+    def get_queryset(self):
+        gossip_id = self.kwargs.get('parent_lookup_gossip')
+        return super().get_queryset().filter(gossip=gossip_id)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        gossip_id = self.kwargs.get('parent_lookup_gossip')
+        gossip = None
+
+        try:
+            gossip = Gossip.objects.get(pk=gossip_id)
+        except Gossip.DoesNotExist:
+            return Response(data={
+                'error': f'The Gossip with ID {gossip_id} Does not exist.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if serializer.is_valid():
+            serializer.save(gossip=gossip, user=self.request.user)
+
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+
+        else:
+            return Response(data=serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
 class GossipCommentDetailAPIView(
         BaseCommentView,

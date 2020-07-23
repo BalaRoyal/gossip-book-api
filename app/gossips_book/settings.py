@@ -20,12 +20,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY', '^jpbex(#ozi-(mc)i-yu_ph=@k@4tbpupaon83to3&rklw%w*1')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get('DEBUG', default=0))
+DEBUG = int(os.environ.get('DEBUG', default=1))
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -44,6 +45,9 @@ INSTALLED_APPS = [
     'question',
     'gossips',
     'rest_framework_filters',
+    'channels',
+    'user_message',
+    'channels_redis',
 ]
 
 MIDDLEWARE = [
@@ -74,7 +78,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'gossips_book.wsgi.application'
+# WSGI_APPLICATION = 'gossips_book.wsgi.application'
+ASGI_APPLICATION = 'gossips_book.routing.application'
 
 
 # Database
@@ -108,7 +113,8 @@ REST_FRAMEWORK = {
 }
 
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7)
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    'JWT_AUTH_COOKIE': 'JWT'
 }
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -161,6 +167,12 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = "flo.developermail@gmail.com"
 EMAIL_HOST_PASSWORD = "FloSend@1"
 
-# CELERY_BROKER_URL = 'redis://localhost:6379'
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('redis://redis:6379/1')],
+        },
+    },
+}
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"

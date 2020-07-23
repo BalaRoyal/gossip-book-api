@@ -124,6 +124,7 @@ class QuestionDetailAPIView(
     """
 
     name = 'question_details'
+
     permission_classes = (IsAuthenticated, IsOwner)
 
 
@@ -134,6 +135,33 @@ class QuestionCommentListCreateAPIView(
     Create and or list question's comments api endpoints.
     """
     name = 'question_comment'
+
+    def get_queryset(self):
+        question_id = self.kwargs.get('parent_lookup_question')
+        return super().get_queryset().filter(question=question_id)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        question_id = self.kwargs.get('parent_lookup_question')
+        question = None
+
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            return Response(data={
+                'error': f'The question with {question_id} id does not exist.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if serializer.is_valid():
+            serializer.save(question=question, user=self.request.user)
+
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+
+        else:
+            return Response(data=serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class QuestionCommentDetailAPIView(

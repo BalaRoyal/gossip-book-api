@@ -1,6 +1,5 @@
 # Pull official base image
-FROM python:3.8.3-alpine
-
+FROM python:3.8.5-alpine
 # set work directory
 
 WORKDIR /usr/src/app
@@ -12,7 +11,7 @@ ENV PYTHONUNBUFFERED 1
 # Install psycopg2 dependencies
 RUN apk update \
     && apk add postgresql-dev gcc python3-dev musl-dev
-
+RUN apk add --no-cache libressl-dev libffi-dev
 # Install dependencies
 # RUN pip install --upgrade  pip
 RUN pip install --upgrade pip
