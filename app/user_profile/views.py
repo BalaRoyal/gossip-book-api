@@ -15,6 +15,7 @@ from .tokens import account_activation_token
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_text
 from django.contrib.sites.shortcuts import get_current_site
+from utils.signals import follow_user_signal
 
 
 class BaseUserView(viewsets.GenericViewSet):
@@ -126,7 +127,10 @@ class ListFollowersAPIView(BaseFollowView,
         return Followers.objects.filter(user=self.request.user, following=True)
 
     def perform_create(self, serializer):
-        return serializer.save(follower=self.request.user)
+        instance = serializer.save(follower=self.request.user)
+        follow_user_signal.send(
+            instance=instance, user=self.request.user, created=True)
+        return instance
 
 
 class ListFollowingAPIView(BaseFollowView,
