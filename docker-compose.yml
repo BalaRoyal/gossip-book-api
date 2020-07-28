@@ -12,8 +12,13 @@ services:
       - ./.env.dev
     depends_on:
       - db
+      - redis
+    links:
+      - redis:redis
     stdin_open: true
     tty: true
+    environment:
+      - REDIS_HOST=redis
   db:
     image: postgres:12.0-alpine
     volumes:
@@ -22,6 +27,17 @@ services:
       - POSTGRES_USER=gossips_book
       - POSTGRES_PASSWORD=gossips_book
       - POSTGRES_DB=gossips_book_dev
+  redis:
+    image: redis:latest
+    command: redis-server
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/var/lib/redis
+      - redis.conf:/usr/local/etc/redis.conf
 
 volumes:
   postgres_data:
+  redis-data:
+  redis.conf:

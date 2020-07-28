@@ -42,7 +42,7 @@ class QuestionCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionComment
         fields = '__all__'
-        read_only_fields = ('updated_at', 'created_at')
+        read_only_fields = ('updated_at', 'created_at', 'question', 'user')
 
 
 class QuestionSerializer(serializers.ModelSerializer):

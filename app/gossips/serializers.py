@@ -37,7 +37,7 @@ class GossipCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GossipComment
         fields = '__all__'
-        read_only_fields = ('updated_at', 'created_at')
+        read_only_fields = ('updated_at', 'created_at', 'user', 'gossip')
 
 
 class GossipSerializer(serializers.ModelSerializer):
@@ -50,4 +50,4 @@ class GossipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gossip
         fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
+        read_only_fields = ('created_at', 'updated_at', 'user')

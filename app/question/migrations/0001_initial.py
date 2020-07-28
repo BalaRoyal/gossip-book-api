@@ -16,7 +16,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Question',
             fields=[
-                ('basegossipquestionmodel_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='utils.BaseGossipQuestionModel')),
+                ('basegossipquestionmodel_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE,
+                                                                     parent_link=True, primary_key=True, serialize=False, to='utils.BaseGossipQuestionModel')),
             ],
             bases=('utils.basegossipquestionmodel', models.Model),
         ),
