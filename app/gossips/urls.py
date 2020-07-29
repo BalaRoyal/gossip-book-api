@@ -35,7 +35,9 @@ urlpatterns = [
          name=views.GossipDetailAPIView.name),
 
     path('comment-vote/<int:pk>', views.GossipVoteDetailAPIView,
-         name='gossip_comment_vote')
+         name='gossip_comment_vote'),
+    path('trending-gossips/', views.ListTrendingGossipsAPIView.as_view(),
+         name='trending_gossips')
 
 ]
 

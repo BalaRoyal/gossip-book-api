@@ -18,6 +18,8 @@ from rest_framework.permissions import (
 
 import rest_framework_filters as filters
 from utils.signals import interested_users, comment_signal, vote_signal
+from datetime import datetime, timedelta
+from django.db.models import Count
 
 
 class GossipFilter(filters.FilterSet):
@@ -66,7 +68,7 @@ class BaseGossipCommentVoteView:
 
 class ListCreateGossipAPIView(BaseView, viewsets.GenericViewSet,
                               generics.ListCreateAPIView):
-    """ 
+    """
     Create API endpoints to list and create gossip instances
     """
 
@@ -172,7 +174,7 @@ class GossipCommentDetailAPIView(
         viewsets.GenericViewSet,
         generics.RetrieveUpdateDestroyAPIView):
     """
-    Update, delete retrieve single Gossip's 
+    Update, delete retrieve single Gossip's
     comment api endpoints.
     """
     name = 'gossip_comment_detail'
@@ -281,3 +283,17 @@ class CommentVoteDetailView(BaseGossipCommentVoteView,
     """
 
     permission_classes = (IsAuthenticated, IsOwner)
+
+
+class ListTrendingGossipsAPIView(BaseView, generics.ListAPIView):
+    """
+    List 5 most trending gossips based on either comments or votes.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            created_at__gte=datetime.now() - timedelta(days=7)
+        ).annotate(total_comments=Count('comments'),
+                   total_votes=Count('votes')).order_by('-total_comments',
+                                                        '-total_votes',
+                                                        '-created_at')[:5]

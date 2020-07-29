@@ -11,6 +11,7 @@ class BaseGossipQuestionModel(models.Model):
 
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.title}"

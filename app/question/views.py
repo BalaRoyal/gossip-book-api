@@ -22,7 +22,8 @@ from django.contrib.auth.models import AnonymousUser
 from utils.signals import (interested_users,
                            comment_signal, vote_signal)
 
-
+from datetime import datetime, timedelta
+from django.db.models import Count
 # FILTERS
 
 
@@ -294,3 +295,17 @@ class CommentVoteDetailAPIView(
     """
 
     permission_classes = (IsAuthenticated, IsOwner)
+
+
+class ListTrendingQuestionsAPIView(BaseView, generics.ListAPIView):
+    """
+    List 5 most trending questions based on either comments or votes.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            created_at__gte=datetime.now() - timedelta(days=7)
+        ).annotate(total_comments=Count('comments'),
+                   total_votes=Count('votes')).order_by('-total_comments',
+                                                        '-total_votes',
+                                                        '-created_at')[:5]
