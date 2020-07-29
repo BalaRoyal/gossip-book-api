@@ -39,7 +39,9 @@ urlpatterns = [
          name='question_vote_detail'),
 
     path('comment-vote/<int:pk>', views.CommentVoteDetailAPIView.as_view(),
-         name='comment_vote')
+         name='comment_vote'),
+    path('trending-questions/', views.ListTrendingQuestionsAPIView.as_view(),
+         name='trending_questions')
 ]
 
 

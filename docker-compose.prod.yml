@@ -5,8 +5,9 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile.prod
-    command: gunicorn gossips_book.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn gossips_book.routing:application --bind 0.0.0.0:8000
     volumes:
+      - ./app/:/usr/src/app/
       - static_volume:/home/app/web/staticfiles
     expose:
       - 8000
@@ -14,6 +15,12 @@ services:
       - ./.env.prod
     depends_on:
       - db
+      - redis
+    links:
+      - redis:redis
+    environment:
+      - REDIS_HOST=redis
+      - DJANGO_SETTINGS_MODULE=gossips_book.settings
   db:
     image: postgres:12.0-alpine
     volumes:
@@ -28,7 +35,17 @@ services:
       - 1337:80
     depends_on:
       - web
-
+  redis:
+    image: redis:latest
+    command: redis-server
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/var/lib/redis
+      - redis.conf:/usr/local/etc/redis.conf
 volumes:
   postgres_data:
   static_volume:
+  redis-data:
+  redis.conf:

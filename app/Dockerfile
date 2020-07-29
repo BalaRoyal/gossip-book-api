@@ -17,7 +17,7 @@ RUN apk add --no-cache libressl-dev libffi-dev
 RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
-
+# RUN pip install flake8
 # copy project
 COPY . .
 ENTRYPOINT [ "/usr/src/app/entrypoint.sh" ]
