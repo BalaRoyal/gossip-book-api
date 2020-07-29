@@ -36,8 +36,17 @@ services:
     volumes:
       - redis-data:/var/lib/redis
       - redis.conf:/usr/local/etc/redis.conf
+  nginx:
+    build: ./nginx
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+    ports:
+      - 1337:80
+    depends_on:
+      - web
 
 volumes:
   postgres_data:
   redis-data:
   redis.conf:
+  static_volume:
