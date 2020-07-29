@@ -4,12 +4,14 @@ from django.contrib.auth import get_user_model
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
 from .models import Message, Thread
+from utils.signals import new_message_signal
 
 
 class MessageConsumer(AsyncConsumer):
     async def websocket_connect(self, event):
 
         other_user = self.scope['url_route']['kwargs']['username']
+
         me = self.scope['user']
 
         thread_obj = await self.get_thread(me, other_user)
@@ -75,9 +77,15 @@ class MessageConsumer(AsyncConsumer):
 
     @database_sync_to_async
     def get_thread(self, user, other_username):
+        self.other_user = get_user_model().objects.get(username=other_username)
         return Thread.objects.get_or_new(user, other_username)[0]
 
     @database_sync_to_async
     def create_new_chat_message(self, me, msg):
         thread_obj = self.thread_obj
-        return Message.objects.create(thread=thread_obj, user=me, message=msg)
+        new_message = Message.objects.create(
+            thread=thread_obj, user=me, message=msg)
+
+        new_message_signal.send(sender=Message, instance=new_message,
+                                user=self.scope['user'], receiver=self.other_user, created=True)
+        return new_message

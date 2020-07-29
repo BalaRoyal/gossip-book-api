@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'channels',
     'user_message',
     'channels_redis',
+    'notifications',
 ]
 
 MIDDLEWARE = [

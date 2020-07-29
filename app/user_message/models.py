@@ -1,6 +1,10 @@
 from django.db import models
 from django.conf import settings
 from django.db.models import Q
+from django.dispatch import receiver
+
+from utils.signals import (send_message_notification,
+                           new_message_signal)
 
 
 class ThreadManager(models.Manager):
@@ -73,3 +77,9 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True, null=True,
                                       blank=True)
+
+
+@receiver(new_message_signal, sender=Message)
+def notify_user(**kwargs):
+    """Notify user when they get a new message. """
+    send_message_notification(**kwargs)

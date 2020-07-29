@@ -4,6 +4,11 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin)
 from django.conf import settings
 from taggit.managers import TaggableManager
+from utils.signals import (
+    follow_user_signal,
+    send_follow_user_notification
+)
+from django.dispatch import receiver
 
 
 class UserManager(BaseUserManager):
@@ -108,3 +113,10 @@ class Followers(models.Model):
     updated_at = models.DateField(auto_now_add=True, null=True, blank=True)
 
     objects = FollowersModelManager()
+
+
+@receiver(follow_user_signal, sender=Followers)
+def send_follow_profile_notification(**kwargs):
+    """Send notification when a user starts following another.
+    """
+    send_follow_profile_notification(**kwargs)

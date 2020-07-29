@@ -1,28 +1,27 @@
-from rest_framework import status
-from rest_framework import generics, viewsets
-from django.contrib.auth.models import AnonymousUser
-
+import rest_framework_filters as filters
+from rest_framework.response import Response
+from utils.permissions import IsOwner
+from rest_framework.reverse import reverse
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly)
+from .serializers import (
+    QuestionSerializer,
+    QuestionCommentSerializer,
+    QuestioVoteSerializer,
+    QuestionCommentVoteSerializer)
 from .models import(
     Question,
     QuestionComment,
     QuestionVote,
     QuestionCommentVote
 )
+from rest_framework import status
+from rest_framework import generics, viewsets
+from django.contrib.auth.models import AnonymousUser
+from utils.signals import (interested_users,
+                           comment_signal, vote_signal)
 
-from .serializers import (
-    QuestionSerializer,
-    QuestionCommentSerializer,
-    QuestioVoteSerializer,
-    QuestionCommentVoteSerializer)
-
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly)
-
-from rest_framework.reverse import reverse
-from utils.permissions import IsOwner
-from rest_framework.response import Response
-import rest_framework_filters as filters
 
 # FILTERS
 
@@ -79,9 +78,9 @@ class ListQuestionsAPIView(BaseView, viewsets.GenericViewSet,
         tags = None
 
         if 'tags' in request.data:
+
             question = request.data['title']
             tags = request.data['tags'].split(',')
-
             serializer = self.get_serializer(data={'title': question})
 
         else:
@@ -92,6 +91,9 @@ class ListQuestionsAPIView(BaseView, viewsets.GenericViewSet,
 
             if tags:
                 instance.tags.add(*tags)
+
+            interested_users.send(
+                sender=Question, instance=instance, user=self.request.user, created=True)
 
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
@@ -154,7 +156,11 @@ class QuestionCommentListCreateAPIView(
             }, status=status.HTTP_404_NOT_FOUND)
 
         if serializer.is_valid():
-            serializer.save(question=question, user=self.request.user)
+            instance = serializer.save(
+                question=question, user=self.request.user)
+
+            comment_signal.send(sender=QuestionComment, post=question, instance=instance,
+                                user=self.request.user, created=True)
 
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
@@ -216,7 +222,13 @@ class QuestionVoteListCreateAPIView(
 
         serializer.is_valid(raise_exception=True)
 
-        serializer.save(voted_by=self.request.user, question=question)
+        instance = serializer.save(
+            voted_by=self.request.user, question=question)
+
+        # Send question vote notification
+
+        vote_signal.send(sender=QuestionVote, instance=instance, post=question,
+                         user=self.request.user, created=True)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
@@ -264,7 +276,12 @@ class CommentVoteListCreateView(BaseQuestionCommentVoteView,
                             status=status.HTTP_201_CREATED)
 
         serializer.is_valid(raise_exception=True)
-        serializer.save(comment=comment, voted_by=self.request.user)
+        instance = serializer.save(comment=comment, voted_by=self.request.user)
+
+        # send question comment vote notification
+
+        vote_signal.send(sender=QuestionCommentVote, instance=instance, post=comment,
+                         user=self.request.user, created=True)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 

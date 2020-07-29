@@ -15,7 +15,9 @@ from rest_framework import generics, viewsets
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly)
+
 import rest_framework_filters as filters
+from utils.signals import interested_users, comment_signal, vote_signal
 
 
 class GossipFilter(filters.FilterSet):
@@ -88,10 +90,12 @@ class ListCreateGossipAPIView(BaseView, viewsets.GenericViewSet,
         tags = None
 
         if 'tags' in request.data:
-            question = request.data['title']
+            title = request.data['title']
+            body = request.data['gossip_description']
             tags = request.data['tags'].split(',')
 
-            serializer = self.get_serializer(data={'title': question})
+            serializer = self.get_serializer(
+                data={'title': title, 'gossip_description': body})
 
         else:
             serializer = self.get_serializer(data=request.data)
@@ -102,6 +106,8 @@ class ListCreateGossipAPIView(BaseView, viewsets.GenericViewSet,
             if tags:
                 instance.tags.add(*tags)
 
+            interested_users.send(sender=Gossip, instance=instance,
+                                  user=self.request.user, created=True)
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
 
@@ -148,7 +154,10 @@ class GossipCommentListCreateAPIView(
             }, status=status.HTTP_404_NOT_FOUND)
 
         if serializer.is_valid():
-            serializer.save(gossip=gossip, user=self.request.user)
+            instance = serializer.save(gossip=gossip, user=self.request.user)
+
+            comment_signal.send(sender=GossipComment, post=gossip, instance=instance,
+                                user=self.request.user, created=True)
 
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
@@ -189,7 +198,7 @@ class GossipVoteListCreateAPIView(BaseGossipVoteView,
             'vote': vote,
         })
 
-        # Make sure the user does not vote twice on a single question.
+        # Make sure the user does not vote twice on a single gossip.
 
         vote_by_user = GossipVote.objects.filter(
             voted_by=self.request.user, gossip=gossip).first()
@@ -200,14 +209,17 @@ class GossipVoteListCreateAPIView(BaseGossipVoteView,
             else:
                 vote_by_user.vote = vote
                 vote_by_user.save()
-
             return Response(data=self.get_serializer(vote_by_user).data,
                             status=status.HTTP_201_CREATED)
 
         serializer.is_valid(raise_exception=True)
 
-        serializer.save(voted_by=self.request.user, gossip=gossip)
+        instance = serializer.save(voted_by=self.request.user, gossip=gossip)
 
+        # send vote notification
+
+        vote_signal.send(sender=GossipVote, instance=instance, post=gossip,
+                         user=self.request.user, created=True)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -254,7 +266,10 @@ class CommentVoteListCreateAPIView(BaseGossipCommentVoteView,
                             status=status.HTTP_201_CREATED)
 
         serializer.is_valid(raise_exception=True)
-        serializer.save(comment=comment, voted_by=self.request.user)
+        instance = serializer.save(comment=comment, voted_by=self.request.user)
+
+        vote_signal.send(sender=GossipCommentVote, instance=instance, post=comment,
+                         user=self.request.user, created=True)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
