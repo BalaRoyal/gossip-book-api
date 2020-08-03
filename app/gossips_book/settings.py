@@ -154,6 +154,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_URL = "/mediafiles/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles")
 AUTH_USER_MODEL = 'user_profile.User'
 
 # EMAIL CONFIGURATION

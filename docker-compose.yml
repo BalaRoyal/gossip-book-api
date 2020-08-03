@@ -1,51 +1,52 @@
-version: "3.3"
+version: "3.7"
 
 services:
-  web:
-    build:
-      context: ./app
-      dockerfile: Dockerfile.prod
-    command: gunicorn gossips_book.routing:application --bind 0.0.0.0:8000
+  wsgi_api:
+    build: ./app
+    command: sh -c "gunicorn gossips_book.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - ./app/:/usr/src/app/
-      - static_volume:/home/app/web/staticfiles
+      - static_volume:/home/app/api/staticfiles
+      - media_volume:/home/app/api/mediafiles
     expose:
       - 8000
     env_file:
       - ./.env.prod
     depends_on:
       - db
-      - redis
-    links:
-      - redis:redis
-    environment:
-      - REDIS_HOST=redis
-      - DJANGO_SETTINGS_MODULE=gossips_book.settings
-  db:
-    image: postgres:12.0-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    stdin_open: true
+    tty: true
+  asgi_api:
+    build: ./app
+    command: daphne gossips_book.asgi:application -b 0.0.0.0 -p 5000
+    expose:
+      - 5000
+    depends_on:
+      - db
+      - wsgi_api
+      - redis-server
     env_file:
-      - ./.env.prod.db
+      - ./.env.prod
+    stdin_open: true
+    tty: true
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=gossip_book
+      - POSTGRES_DB=gossip_book
   nginx:
+    restart: always
     build: ./nginx
     volumes:
-      - static_volume:/home/app/web/staticfiles
+      - static_volume:/home/app/api/staticfiles
     ports:
       - "1337:80"
     depends_on:
-      - web
-  redis:
-    image: redis:latest
-    command: redis-server
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/var/lib/redis
-      - redis.conf:/usr/local/etc/redis.conf
+      - asgi_api
+      - wsgi_api
+  redis-server:
+    image: "redis:latest"
+
 volumes:
-  postgres_data:
   static_volume:
-  redis-data:
-  redis.conf:
+  media_volume:
