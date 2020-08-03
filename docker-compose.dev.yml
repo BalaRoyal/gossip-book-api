@@ -1,0 +1,37 @@
+version: "3.7"
+
+services:
+  db:
+    image: "postgres:latest"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=gossip_book
+      - POSTGRES_DB=gossip_book
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./app
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/usr/src/app
+    env_file:
+      - ./.env.dev
+    stdin_open: true
+    tty: true
+    depends_on:
+      - db
+      - redis-server
+
+  redis-server:
+    image: "redis:latest"
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - api

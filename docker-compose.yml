@@ -1,52 +1,52 @@
-version: "3.3"
+version: "3.7"
 
 services:
-  web:
+  wsgi_api:
     build: ./app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "gunicorn gossips_book.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - ./app/:/usr/src/app/
-    ports:
-      - 8000:8000
+      - static_volume:/home/app/api/staticfiles
+      - media_volume:/home/app/api/mediafiles
+    expose:
+      - 8000
     env_file:
-      - ./.env.dev
+      - ./.env.prod
     depends_on:
       - db
-      - redis
-    links:
-      - redis:redis
     stdin_open: true
     tty: true
-    environment:
-      - REDIS_HOST=redis
+  asgi_api:
+    build: ./app
+    command: daphne gossips_book.asgi:application -b 0.0.0.0 -p 5000
+    expose:
+      - 5000
+    depends_on:
+      - db
+      - wsgi_api
+      - redis-server
+    env_file:
+      - ./.env.prod
+    stdin_open: true
+    tty: true
   db:
-    image: postgres:12.0-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    image: postgres:latest
     environment:
-      - POSTGRES_USER=gossips_book
-      - POSTGRES_PASSWORD=gossips_book
-      - POSTGRES_DB=gossips_book_dev
-  redis:
-    image: redis:latest
-    command: redis-server
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/var/lib/redis
-      - redis.conf:/usr/local/etc/redis.conf
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=gossip_book
+      - POSTGRES_DB=gossip_book
   nginx:
+    restart: always
     build: ./nginx
     volumes:
-      - static_volume:/home/app/web/staticfiles
+      - static_volume:/home/app/api/staticfiles
     ports:
-      - 1337:80
+      - "1337:80"
     depends_on:
-      - web
+      - asgi_api
+      - wsgi_api
+  redis-server:
+    image: "redis:latest"
 
 volumes:
-  postgres_data:
-  redis-data:
-  redis.conf:
   static_volume:
+  media_volume:
