@@ -12,21 +12,31 @@ SECRET_KEY = os.environ.get(
     'SECRET_KEY', '^jpbex(#ozi-(mc)i-yu_ph=@k@4tbpupaon83to3&rklw%w*1')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get('DEBUG', default=0))
+DEBUG = int(os.environ.get('DEBUG', 0))
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(' ')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
 
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
+    'rest_framework.authtoken',
+    'allauth',
+    'rest_auth',
+    'rest_auth.registration',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
     'user_profile',
     'taggit',
     'utils',
@@ -37,9 +47,11 @@ INSTALLED_APPS = [
     'user_message',
     'channels_redis',
     'notifications',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -67,23 +79,29 @@ TEMPLATES = [
     },
 ]
 
+# ACCOUNT_ADAPTER = 'gossips_book.adapter.UserProfileAdapter'
+
 # WSGI_APPLICATION = 'gossips_book.wsgi.application'
 ASGI_APPLICATION = 'gossips_book.routing.application'
-
-
+CORS_ORIGIN_ALLOW_ALL = True
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("PG_DATABASE", os.path.join(BASE_DIR, "db.sqlite3")),
-        "USER": os.environ.get("PG_USER", "user"),
-        "PASSWORD": os.environ.get("PG_PASSWORD", "password"),
-        "HOST": os.environ.get("PG_HOST", "localhost"),
-        "PORT": os.environ.get("PG_PORT", "5432"),
+        "ENGINE": os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        "NAME": os.environ.get("PG_DATABASE", os.path.join(BASE_DIR, 'db.sqlite3')),
+        "USER": os.environ.get("PG_USER", ''),
+        "PASSWORD": os.environ.get("PG_PASSWORD", ''),
+        "HOST": os.environ.get("PG_HOST", ''),
+        "PORT": os.environ.get("PG_PORT", ''),
     }
 }
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend'
+]
 
 # REST FRAMEWORK
 
@@ -105,6 +123,7 @@ JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),
     'JWT_AUTH_COOKIE': 'JWT'
 }
+
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -137,32 +156,27 @@ USE_L10N = True
 
 USE_TZ = True
 
+SITE_ID = os.environ.get('SITE_ID', 1)
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
-STATIC_URL = '/static/'
+STATIC_URL = '/staticfiles/'
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 MEDIA_URL = "/mediafiles/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles")
-AUTH_USER_MODEL = 'user_profile.User'
 
-# Add these new lines
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
+AUTH_USER_MODEL = 'user_profile.User'
 
 # EMAIL CONFIGURATION
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_BACKEND = 'post_office.EmailBackend'
 
 
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = "flo.developermail@gmail.com"
-EMAIL_HOST_PASSWORD = "FloSend@1"
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+REST_USE_JWT = True
 
 CHANNEL_LAYERS = {
     'default': {
@@ -172,4 +186,31 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': {
+            'profile',
+            'email'
+        },
+        'AUTH_PARAMS': {
+            'access_type': 'online'
+        }
+    },
+
+}
+
+FACEBOOK_APP_ID = os.environ.get('FACEBOOK_APP_ID')
+FACEBOOK_APP_SECRET = os.environ.get('FACEBOOK_APP_SECRET')
+
+
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 2
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
+
+
+# LOGIN_REDIRECT_URL = '/'
+
+
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"

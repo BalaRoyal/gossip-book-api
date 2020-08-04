@@ -9,9 +9,10 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Install psycopg2 dependencies
+RUN apk add --update --no-cache postgresql-client jpeg-dev
 RUN apk update \
-    && apk add postgresql-dev gcc python3-dev musl-dev
-RUN apk add --no-cache libressl-dev libffi-dev
+    && apk add gcc python3-dev musl-dev jpeg-dev postgresql-client
+RUN apk add --no-cache libressl-dev libffi-dev gcc libc-dev linux-headers postgresql-dev musl-dev zlib zlib-dev
 
 # Install dependencies
 # RUN pip install --upgrade  pip
@@ -21,5 +22,3 @@ RUN pip install -r requirements.txt
 
 # copy project
 COPY . .
-
-ENTRYPOINT [ "/usr/src/app/entrypoint.sh" ]

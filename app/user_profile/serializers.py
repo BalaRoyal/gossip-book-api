@@ -34,7 +34,7 @@ class UserLocationSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Converts user model object to and from JSON. 
+    Converts user model object to and from JSON.
     """
 
     address = UserLocationSerializer(many=True, read_only=True)
@@ -57,7 +57,8 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active',
             'followers',
             'following',
-            'interested_topics'
+            'interested_topics',
+            'profile_image_url'
         )
 
         read_only_fields = ('id', 'created_at', 'updated_at', 'is_active')

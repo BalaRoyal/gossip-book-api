@@ -6,6 +6,14 @@ from .models import (Gossip,
                      GossipVote,
                      GossipCommentVote)
 
+from user_profile.serializers import UserSerializer
+
+
+class GossipTitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gossip
+        fields = ('title', 'id')
+
 
 class GossipVotesSerializer(serializers.ModelSerializer):
     """
@@ -23,6 +31,8 @@ class GossipCommentVotesSerializer(serializers.ModelSerializer):
     convert gossip votes model to and from json.
     """
 
+    gossip = GossipTitleSerializer(read_only=True)
+
     class Meta:
         model = GossipCommentVote
         fields = '__all__'
@@ -33,6 +43,7 @@ class GossipCommentSerializer(serializers.ModelSerializer):
     """ Converts question comment model to and from JSON."""
 
     votes = GossipCommentVotesSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = GossipComment
@@ -46,6 +57,7 @@ class GossipSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     comments = GossipCommentSerializer(many=True, read_only=True)
     votes = GossipVotesSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Gossip
