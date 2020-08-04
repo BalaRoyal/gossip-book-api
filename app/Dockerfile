@@ -42,4 +42,5 @@ COPY ./entrypoint.prod.sh $APP_HOME
 COPY . $APP_HOME
 RUN chown -R app:app $APP_HOME
 
+CMD [ "python", "manage.py", "runserver", "--bind", "0.0.0.0:8000" ]
 ENTRYPOINT [ "/home/app/api/entrypoint.prod.sh" ]

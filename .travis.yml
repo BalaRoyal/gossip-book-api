@@ -9,14 +9,14 @@ script:
   - docker run backend_api python manage.py test
 
 deploy:
-  - provider: elasticbeanstalk
-  - region: "us-east-1"
-  - name: "docker"
-  - env: "Docker-env"
-  - bucket_name: "elasticbeanstalk-us-east-1-271279667713"
-  - bucket_path: "docker"
+  provider: elasticbeanstalk
+  region: "us-east-1"
+  name: "docker"
+  env: "Docker-env"
+  bucket_name: "elasticbeanstalk-us-east-1-271279667713"
+  bucket_path: "docker"
 
   on:
-    branch: ch-aws-deployment
+    branch: "develop"
   access_key_id: $AWS_ACCESS_KEY
   secret_access_key: $AWS_SECRET_KEY
