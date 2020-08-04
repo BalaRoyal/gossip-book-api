@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_script:
+  - docker build -t backend_api -f ./app/Dockerfile.dev ./app
+
+script:
+  - docker run backend_api python manage.py test
+
+deploy:
+  provider: elasticbeanstalk
+  region: "us-east-1"
+  app: "docker"
+  env: "Docker-env"
+  bucket_name: "elasticbeanstalk-us-east-1-761358854971"
+  bucket_path: "docker"
+
+  on:
+    branch: develop
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: $AWS_SECRET_KEY
