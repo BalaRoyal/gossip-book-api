@@ -1,29 +1,23 @@
-import rest_framework_filters as filters
-from rest_framework.response import Response
-from utils.permissions import IsOwner
-from rest_framework.reverse import reverse
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly)
-from .serializers import (
-    QuestionSerializer,
-    QuestionCommentSerializer,
-    QuestioVoteSerializer,
-    QuestionCommentVoteSerializer)
-from .models import(
-    Question,
-    QuestionComment,
-    QuestionVote,
-    QuestionCommentVote
-)
-from rest_framework import status
-from rest_framework import generics, viewsets
-from django.contrib.auth.models import AnonymousUser
-from utils.signals import (interested_users,
-                           comment_signal, vote_signal)
-
 from datetime import datetime, timedelta
+
+import rest_framework_filters as filters
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import Count
+from rest_framework import generics, status, viewsets
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+
+from utils.permissions import IsOwner
+from utils.signals import comment_signal, interested_users, vote_signal
+
+from .models import (Question, QuestionComment, QuestionCommentVote,
+                     QuestionVote)
+from .serializers import (QuestionCommentSerializer,
+                          QuestionCommentVoteSerializer, QuestionSerializer,
+                          QuestionVoteSerializer)
+
 # FILTERS
 
 
@@ -54,7 +48,7 @@ class BaseCommentView(viewsets.GenericViewSet):
 
 class BaseQuestionVoteView:
     queryset = QuestionVote.objects.filter(vote__in=['UPVOTE', 'DOWNVOTE'])
-    serializer_class = QuestioVoteSerializer
+    serializer_class = QuestionVoteSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
@@ -68,7 +62,7 @@ class BaseQuestionCommentVoteView:
 class ListQuestionsAPIView(BaseView, viewsets.GenericViewSet,
                            generics.ListCreateAPIView):
     """
-    Creates API endpoints to view a list of all 
+    Creates API endpoints to view a list of all
     available questions.17:30, no
     """
 
@@ -122,7 +116,7 @@ class QuestionDetailAPIView(
         generics.RetrieveUpdateDestroyAPIView):
 
     """
-    Creates API endpoints to view a list of all 
+    Creates API endpoints to view a list of all
     available questions.
     """
 
@@ -140,8 +134,14 @@ class QuestionCommentListCreateAPIView(
     name = 'question_comment'
 
     def get_queryset(self):
+        user = self.request.user
         question_id = self.kwargs.get('parent_lookup_question')
-        return super().get_queryset().filter(question=question_id)
+
+        question = Question.objects.get(pk=question_id)
+
+        if question.user == user:
+            return super().get_queryset().filter(question=question_id)
+        return super().get_queryset().filter(question=question_id, is_public=True)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -175,7 +175,7 @@ class QuestionCommentDetailAPIView(
         BaseCommentView,
         generics.RetrieveUpdateDestroyAPIView):
     """
-    Update, delete retrieve single question's 
+    Update, delete retrieve single question's
     comment api endpoints.
     """
     name = 'question_comment_detail'
