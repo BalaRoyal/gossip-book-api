@@ -55,5 +55,3 @@ COPY . $APP_HOME
 RUN chown -R app:app $APP_HOME
 
 ENTRYPOINT [ "/home/app/api/entrypoint.sh"]
-
-CMD ["daphne", "gossips_book.asgi:application" ,"-b","0.0.0.0","-p","8000"]

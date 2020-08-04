@@ -1,5 +1,6 @@
-import os
 import datetime
+import os
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -12,7 +13,7 @@ SECRET_KEY = os.environ.get(
     'SECRET_KEY', '^jpbex(#ozi-(mc)i-yu_ph=@k@4tbpupaon83to3&rklw%w*1')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get('DEBUG', 0))
+DEBUG = int(os.environ.get('DEBUG', 1))
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
@@ -89,12 +90,12 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        "NAME": os.environ.get("PG_DATABASE", os.path.join(BASE_DIR, 'db.sqlite3')),
-        "USER": os.environ.get("PG_USER", ''),
-        "PASSWORD": os.environ.get("PG_PASSWORD", ''),
-        "HOST": os.environ.get("PG_HOST", ''),
-        "PORT": os.environ.get("PG_PORT", ''),
+        "ENGINE": os.environ.get('DB_ENGINE', 'django.db.backends.postgresql_psycopg2'),
+        "NAME": os.environ.get("PG_DATABASE"),
+        "USER": os.environ.get("PG_USER"),
+        "PASSWORD": os.environ.get("PG_PASSWORD"),
+        "HOST": os.environ.get("PG_HOST"),
+        "PORT": os.environ.get("PG_PORT"),
     }
 }
 
