@@ -37,7 +37,7 @@ services:
       - static_volume:/home/app/api/staticfiles
       - media_volume:/home/app/api/mediafiles
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - api
   redis-server:
