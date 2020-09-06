@@ -21,10 +21,19 @@ class Gossip(BaseGossipQuestionModel, models.Model):
     """QuestionVoteDetailAPIView
     User Gossips Table model.
     """
+    GOSSIP = 'GOSSIP'
+    CHEATER = 'CHEATER'
+
+    TYPE_CHOICES = (
+        (GOSSIP, 'Gossip'),
+        (CHEATER, 'Cheater')
+    )
 
     user = models.ForeignKey(
         get_user_model(), related_name='gossips', on_delete=models.CASCADE)
     gossip_description = models.TextField()
+    gossip_type = models.CharField(
+        max_length=50, choices=TYPE_CHOICES, default=GOSSIP)
 
     def __str__(self):
         return f"{self.title}"

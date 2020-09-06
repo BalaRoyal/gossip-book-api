@@ -11,11 +11,14 @@ services:
     build:
       dockerfile: Dockerfile.dev
       context: ./app
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    restart: always
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     volumes:
       - ./app:/usr/src/app
+      - static_volume:/usr/src/app/api/staticfiles
+
     env_file:
       - ./.env.dev
     stdin_open: true
@@ -35,3 +38,7 @@ services:
       - "8080:80"
     depends_on:
       - api
+    volumes:
+      - static_volume:/usr/src/app/api/staticfiles
+volumes:
+  static_volume:

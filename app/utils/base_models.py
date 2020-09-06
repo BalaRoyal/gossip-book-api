@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from taggit.managers import TaggableManager
+from utils.functions import post_image_upload_path
 
 
 class BaseGossipQuestionModel(models.Model):
@@ -11,7 +12,7 @@ class BaseGossipQuestionModel(models.Model):
 
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    image_url = models.URLField(null=True, blank=True)
+    image_url = models.ImageField(null=True, upload_to=post_image_upload_path)
 
     def __str__(self):
         return f"{self.title}"
@@ -55,6 +56,7 @@ class BaseVotesModel(models.Model):
 
     vote = models.TextField(
         max_length=50, choices=VOTE_CHOICES, default=UPVOTE)
+    is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 

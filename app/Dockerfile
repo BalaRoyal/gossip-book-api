@@ -11,7 +11,18 @@ RUN apk add --no-cache libressl-dev libffi-dev
 
 RUN pip install --upgrade pip
 COPY ./requirements.txt .
+RUN apk add --update --no-cache postgresql-client jpeg-dev
+RUN apk update \
+    && apk add gcc python3-dev musl-dev jpeg-dev postgresql-client
+RUN apk add --no-cache libressl-dev libffi-dev gcc libc-dev linux-headers postgresql-dev musl-dev zlib zlib-dev
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+RUN apk update \
+    && apk add --virtual build-deps gcc python3-dev musl-dev \
+    && apk add postgresql \
+    && apk add postgresql-dev\
+    && apk add jpeg-dev zlib-dev libjpeg \
+    && pip install Pillow \
+    && apk del build-deps
 COPY . .
 
 
@@ -31,16 +42,18 @@ RUN mkdir -p $APP_HOME/mediafiles
 
 WORKDIR $APP_HOME
 
-RUN apk update && apk add libpq
+RUN apk update && apk add libpq jpeg-dev zlib-dev libjpeg
 COPY --from=builder /usr/src/app/wheels /wheels
 COPY --from=builder /usr/src/app/requirements.txt .
 
 RUN pip install --no-cache /wheels/*
 
-COPY ./entrypoint.prod.sh $APP_HOME
+
+COPY ./entrypoint.sh $APP_HOME
 
 COPY . $APP_HOME
 RUN chown -R app:app $APP_HOME
 
-CMD [ "python", "manage.py", "runserver", "--bind", "0.0.0.0:8000" ]
-ENTRYPOINT [ "/home/app/api/entrypoint.prod.sh" ]
+ENTRYPOINT [ "/home/app/api/entrypoint.sh"]
+
+CMD ["daphne", "gossips_book.asgi:application" ,"-b","0.0.0.0","-p","8000"]

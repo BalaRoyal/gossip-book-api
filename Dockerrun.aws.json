@@ -1,0 +1,74 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "essential": false,
+      "image": "redis:latest",
+      "name": "redis",
+      "hostName": "redis",
+      "memory": 128
+    },
+    {
+      "essential": true,
+      "name": "api",
+      "memory": 128,
+      "hostName": "api",
+      "image": "mwibutsa/api:latest",
+      "links": ["redis"],
+      "mountPoints": [
+        {
+          "containerPath": "/home/app/api/staticfiles",
+          "sourceVolume": "Static_Volume"
+        },
+        {
+          "containerPath": "/home/app/api/mediafiles",
+          "sourceVolume": "Media_Volume"
+        }
+      ],
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000
+        }
+      ]
+    },
+
+    {
+      "essential": true,
+      "name": "nginx",
+      "image": "mwibutsa/nginx-proxy:latest",
+      "mountPoints": [
+        {
+          "containerPath": "/home/app/api/staticfiles",
+          "sourceVolume": "Static_Volume"
+        },
+        {
+          "containerPath": "/home/app/api/mediafiles",
+          "sourceVolume": "Media_Volume"
+        }
+      ],
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80
+        }
+      ],
+      "memory": 128,
+      "links": ["api"]
+    }
+  ],
+  "volumes": [
+    {
+      "host": {
+        "sourcePath": "static_volume"
+      },
+      "name": "Static_Volume"
+    },
+    {
+      "host": {
+        "sourcePath": "media_volume"
+      },
+      "name": "Media_Volume"
+    }
+  ]
+}

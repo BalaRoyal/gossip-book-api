@@ -4,6 +4,7 @@ from .models import (Question,
                      QuestionVote,
                      QuestionCommentVote)
 from taggit.models import Tag
+from user_profile.serializers import UserSerializer
 
 
 class QuestioVoteSerializer(serializers.ModelSerializer):
@@ -15,6 +16,12 @@ class QuestioVoteSerializer(serializers.ModelSerializer):
         model = QuestionVote
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'voted_by', 'question')
+
+
+class QuestionTitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ('title', 'id')
 
 
 class QuestionCommentVoteSerializer(serializers.ModelSerializer):
@@ -38,6 +45,8 @@ class QuestionCommentSerializer(serializers.ModelSerializer):
     """ Converts question comment model to and from JSON."""
 
     votes = QuestionCommentVoteSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
+    question = QuestionTitleSerializer(read_only=True)
 
     class Meta:
         model = QuestionComment
@@ -51,6 +60,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     comments = QuestionCommentSerializer(many=True, read_only=True)
     votes = QuestioVoteSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Question

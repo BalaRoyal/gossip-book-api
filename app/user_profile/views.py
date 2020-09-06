@@ -15,7 +15,27 @@ from .tokens import account_activation_token
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_text
 from django.contrib.sites.shortcuts import get_current_site
+from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
+from rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from utils.signals import follow_user_signal
+from gossips.models import GossipComment, Gossip
+from question.models import QuestionComment, Question
+from gossips.serializers import GossipCommentSerializer
+from question.serializers import QuestionCommentSerializer
+import os
+
+
+class FacebookLoginView(SocialLoginView):
+    adapter_class = FacebookOAuth2Adapter
+    authentication_classes = ()
+
+
+class GoogleLoginView(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    authentication_classes = ()
 
 
 class BaseUserView(viewsets.GenericViewSet):
@@ -98,8 +118,6 @@ class ConfirmEmailAPIVIew(BaseUserView,
             user = get_user_model().objects.get(pk=uid)
 
         except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist) as error:
-            import pdb
-            pdb.set_trace()
 
             user = None
 
@@ -112,7 +130,8 @@ class ConfirmEmailAPIVIew(BaseUserView,
             })
 
         else:
-            return Response(data={"message": "Activation link is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"message": "Activation link is invalid."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return super().update(request, *args, **kwargs)
 
@@ -143,12 +162,36 @@ class ListFollowingAPIView(BaseFollowView,
         return Followers.objects.filter(follower=self.request.user, following=True)
 
 
+class ListUserAnswer(generics.ListAPIView):
+    """List all comments adde to either user questions/ answers"""
+
+    serializer_class = QuestionCommentSerializer
+
+    def get_queryset(self):
+        questions = Question.objects.filter(user=self.request.user)
+        comments = QuestionComment.objects.filter(question__in=questions)
+
+        return comments
+
+
+class ListUserGossipComments(generics.ListAPIView):
+    """List all comments adde to either user questions/ answers"""
+
+    serializer_class = GossipCommentSerializer
+
+    def get_queryset(self):
+        gossips = Gossip.objects.filter(user=self.request.user)
+        answers = GossipComment.objects.filter(gossip__in=gossips)
+
+        return answers
+
+
 class FollowersDetailView(BaseFollowView, generics.RetrieveUpdateAPIView):
     """
     Retrieve and Update user followers
     """
 
-    permision_classes = (IsAuthenticated, IsFollowerOwner)
+    permission_classes = (IsAuthenticated, IsFollowerOwner)
 
 
 class UserInterestedTopicsListAPIView(BaseUserView, generics.ListAPIView):
@@ -207,3 +250,31 @@ class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
 
                 return Response(data=self.get_serializer(user),
                                 status=status.HTTP_200_OK)
+
+
+class InitConfigView(generics.ListAPIView):
+
+    permission_classes = ()
+    queryset = get_user_model().objects.all()
+    serializer_class = ()
+
+    def get(self, request, *args, **kwargs):
+
+        init_user_email = os.environ.get('INITIAL_EMAIL')
+        init_user_username = os.environ.get('INITIAL_USERNAME')
+        init_user_password = os.environ.get('INITIAL_PASSWORD')
+
+        try:
+            user = get_user_model().objects.filter(email=init_user_email).first()
+
+            if user:
+                pass
+            else:
+                get_user_model().objects.create_superuser(email=init_user_email,
+                                                          username=init_user_username, password=init_user_password)
+        except Exception as error:
+            return Response(data={
+                'error': f"Failed to create initial user {error}"
+            })
+
+        return Response(data={'message': "Initial admin user was created successfully!"})
