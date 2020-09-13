@@ -140,8 +140,6 @@ class QuestionCommentListCreateAPIView(
         question = Question.objects.get(pk=question_id)
 
         # if user owns a question
-        import pdb
-        pdb.set_trace()
         if question.user == user:
             return super().get_queryset().filter(question=question_id)
         return super().get_queryset().filter(question=question_id, is_public=True)
