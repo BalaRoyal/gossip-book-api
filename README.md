@@ -1,4 +1,4 @@
-# gossip-book-api
+# GossipBook-api
 > Django API endpoitns for Gossip Book Mobile app
 
 ### Setting up 
