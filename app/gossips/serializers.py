@@ -1,12 +1,9 @@
-from question.serializers import TagSerializer
 from rest_framework import serializers
 
-from .models import (Gossip,
-                     GossipComment,
-                     GossipVote,
-                     GossipCommentVote)
-
+from question.serializers import TagSerializer
 from user_profile.serializers import UserSerializer
+
+from .models import Gossip, GossipComment, GossipCommentVote, GossipVote
 
 
 class GossipTitleSerializer(serializers.ModelSerializer):
