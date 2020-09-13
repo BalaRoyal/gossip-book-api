@@ -1,13 +1,13 @@
 from rest_framework import serializers
-from .models import (Question,
-                     QuestionComment,
-                     QuestionVote,
-                     QuestionCommentVote)
 from taggit.models import Tag
+
 from user_profile.serializers import UserSerializer
 
+from .models import (Question, QuestionComment, QuestionCommentVote,
+                     QuestionVote)
 
-class QuestioVoteSerializer(serializers.ModelSerializer):
+
+class QuestionVoteSerializer(serializers.ModelSerializer):
     """
     Convert question votes table model to and form json
     """
@@ -44,7 +44,7 @@ class TagSerializer(serializers.ModelSerializer):
 class QuestionCommentSerializer(serializers.ModelSerializer):
     """ Converts question comment model to and from JSON."""
 
-    votes = QuestionCommentVoteSerializer(many=True, read_only=True)
+    # votes = QuestionCommentVoteSerializer(many=True, read_only=True)
     user = UserSerializer(read_only=True)
     question = QuestionTitleSerializer(read_only=True)
 
@@ -59,7 +59,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     tags = TagSerializer(many=True, read_only=True)
     comments = QuestionCommentSerializer(many=True, read_only=True)
-    votes = QuestioVoteSerializer(many=True, read_only=True)
+    votes = QuestionVoteSerializer(many=True, read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:

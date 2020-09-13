@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='basevotesmodel',
-            name='is_public',
-            field=models.BooleanField(default=False),
-        ),
+
     ]

@@ -1,25 +1,20 @@
-from django.shortcuts import render
-from utils.permissions import IsOwner
-from .models import (Gossip, GossipComment,
-                     GossipVote,
-                     GossipCommentVote)
-
-from .serializers import (GossipSerializer,
-                          GossipCommentSerializer,
-                          GossipVotesSerializer,
-                          GossipCommentVotesSerializer)
-
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import generics, viewsets
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly)
+from datetime import datetime, timedelta
 
 import rest_framework_filters as filters
-from utils.signals import interested_users, comment_signal, vote_signal
-from datetime import datetime, timedelta
 from django.db.models import Count
+from django.shortcuts import render
+from rest_framework import generics, status, viewsets
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+
+from utils.permissions import IsOwner
+from utils.signals import comment_signal, interested_users, vote_signal
+
+from .models import Gossip, GossipComment, GossipCommentVote, GossipVote
+from .serializers import (GossipCommentSerializer,
+                          GossipCommentVotesSerializer, GossipSerializer,
+                          GossipVotesSerializer)
 
 
 class GossipFilter(filters.FilterSet):
@@ -140,7 +135,14 @@ class GossipCommentListCreateAPIView(
 
     def get_queryset(self):
         gossip_id = self.kwargs.get('parent_lookup_gossip')
-        return super().get_queryset().filter(gossip=gossip_id)
+        user = self.request.user
+
+        gossip = Gossip.objects.get(gossip=gossip_id)
+
+        if gossip.user == user:
+            return super().get_queryset().filter(gossip=gossip_id)
+
+        return super().get_queryset().filter(gossip=gossip_id, is_public=True)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

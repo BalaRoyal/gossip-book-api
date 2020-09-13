@@ -20,6 +20,9 @@ services:
       - redis-server
     env_file:
       - ./.env.prod
+
+    tty: true
+    stdin_open: true
   nginx:
     restart: always
     build: ./nginx
