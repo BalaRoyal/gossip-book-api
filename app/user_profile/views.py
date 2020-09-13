@@ -1,30 +1,34 @@
-from rest_framework import generics
-from rest_framework import viewsets
-from .models import User, UserLocation, Followers
-from django.contrib.auth import get_user_model
-from .serializers import UserSerializer, UserLocationSerializer, FollowersSerializer
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from .permissions import IsProfileOwner, IsFollowerOwner
-from django.conf import settings
-from rest_framework.response import Response
-from rest_framework import status
-from .tasks import send_email
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from .tokens import account_activation_token
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_text
-from django.contrib.sites.shortcuts import get_current_site
-from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
-from rest_auth.registration.views import SocialLoginView
+import os
+
+from allauth.socialaccount.providers.facebook.views import \
+    FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from utils.signals import follow_user_signal
-from gossips.models import GossipComment, Gossip
-from question.models import QuestionComment, Question
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_text
+from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from rest_auth.registration.views import SocialLoginView
+from rest_framework import generics, status, viewsets
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+
+from gossips.models import Gossip, GossipComment
 from gossips.serializers import GossipCommentSerializer
+from question.models import Question, QuestionComment
 from question.serializers import QuestionCommentSerializer
-import os
+from utils.signals import follow_user_signal
+
+from .models import Followers, User, UserLocation
+from .permissions import IsFollowerOwner, IsProfileOwner
+from .serializers import (FollowersSerializer, UserLocationSerializer,
+                          UserSerializer)
+from .tasks import send_email
+from .tokens import account_activation_token
 
 
 class FacebookLoginView(SocialLoginView):
@@ -111,8 +115,6 @@ class ConfirmEmailAPIVIew(BaseUserView,
 
     def get(self, request, *args, **kwargs):
         try:
-            import pdb
-            pdb.set_trace()
             token = kwargs.get('token')
             uid = int(force_text(urlsafe_base64_decode(kwargs.get('uidb64'))))
             user = get_user_model().objects.get(pk=uid)
@@ -147,8 +149,10 @@ class ListFollowersAPIView(BaseFollowView,
 
     def perform_create(self, serializer):
         instance = serializer.save(follower=self.request.user)
-        follow_user_signal.send(
-            instance=instance, user=self.request.user, created=True)
+
+        # Send notification to the user being followed.
+        follow_user_signal.send(semder=Followers,
+                                instance=instance, user=self.request.user, created=True)
         return instance
 
 
