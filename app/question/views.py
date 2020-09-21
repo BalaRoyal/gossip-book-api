@@ -8,7 +8,6 @@ from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-
 from utils.permissions import IsOwner
 from utils.signals import comment_signal, interested_users, vote_signal
 
@@ -208,9 +207,6 @@ class QuestionVoteListCreateAPIView(
 
         vote_by_user = QuestionVote.objects.filter(
             voted_by=self.request.user, question=question).first()
-
-        # import pdb
-        # pdb.set_trace()
         if vote_by_user is not None:
             if vote_by_user.vote == vote:
                 vote_by_user.vote = 'UNDONE'

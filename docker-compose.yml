@@ -10,6 +10,7 @@ services:
   api:
     build: ./app
     command: "daphne gossips_book.asgi:application -b 0.0.0.0 -p 8000"
+    # command: "python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/home/app/api/staticfiles
       - media_volume:/home/app/api/mediafiles

@@ -1,13 +1,13 @@
 import asyncio
 import json
-from django.contrib.auth import get_user_model
+
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
+from django.contrib.auth import get_user_model
 
 
 class NotificationConsumer(AsyncConsumer):
     async def websocket_connect(self, event):
-
         user = self.scope['user']
         self.room_name = f'notification_{user.id}'
 

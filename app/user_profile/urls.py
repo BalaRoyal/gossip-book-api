@@ -1,36 +1,28 @@
-from django.urls import path
-from .views import (
-    UserDetailAPIView,
-    ListFollowersAPIView,
-    ListFollowingAPIView,
-    FollowersDetailView,
-    ConfirmEmailAPIVIew,
-    UserInterestedTopicsAPIView,
-    UserInterestedTopicsListAPIView, UserListAPIView,
-    GoogleLoginView,
-    InitConfigView, ListUserAnswer,
-    ListUserGossipComments,
-    FacebookLoginView)
-
+from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token
 from utils.routers import NestedRouter
-from django.urls import include
+
+from .views import (ConfirmEmailAPIVIew, FacebookLoginView,
+                    FollowersDetailView, GoogleLoginView, InitConfigView,
+                    ListFollowersAPIView, ListFollowingAPIView, ListUserAnswer,
+                    ListUserGossipComments, UserDetailAPIView,
+                    UserInterestedTopicsAPIView,
+                    UserInterestedTopicsListAPIView, UserListAPIView)
 
 app_name = 'user'
 
 router = NestedRouter()
 
+# BASE PROFILE URL
 user_detail_router = router.register('profile', UserDetailAPIView)
+
+# USER PROFILE FOLLOWERS
 user_detail_router.register('followers', ListFollowersAPIView,
                             basename='followers', parents_query_lookups=['user'])
 
+# USERS FOLLOWED BY USER PROFILE
 user_detail_router.register('following', ListFollowingAPIView,
                             basename='following', parents_query_lookups=['follower'])
-InitConfigView
-user_detail_router.register(
-    'unfollow', FollowersDetailView,
-    basename='unfollow',
-    parents_query_lookups=['user'])
 
 urlpatterns = [
     path('all/', UserListAPIView.as_view({'get': 'list'}),

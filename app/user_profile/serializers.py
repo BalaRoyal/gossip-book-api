@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from .models import (User,
-                     UserLocation,
-                     Followers)
 from taggit.models import Tag
+
+from .models import Followers, User, UserLocation
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -19,7 +18,8 @@ class FollowersSerializer(serializers.ModelSerializer):
         model = Followers
         fields = '__all__'
 
-        read_only_fields = ('created_at', 'updated_at', 'follower')
+        read_only_fields = ('created_at', 'updated_at',
+                            'follower', 'user', 'following')
 
 
 class UserLocationSerializer(serializers.ModelSerializer):

@@ -1,30 +1,35 @@
-from rest_framework import generics
-from rest_framework import viewsets
-from .models import User, UserLocation, Followers
-from django.contrib.auth import get_user_model
-from .serializers import UserSerializer, UserLocationSerializer, FollowersSerializer
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from .permissions import IsProfileOwner, IsFollowerOwner
-from django.conf import settings
-from rest_framework.response import Response
-from rest_framework import status
-from .tasks import send_email
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from .tokens import account_activation_token
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_text
-from django.contrib.sites.shortcuts import get_current_site
-from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
-from rest_auth.registration.views import SocialLoginView
+import os
+
+from allauth.socialaccount.providers.facebook.views import \
+    FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from utils.signals import follow_user_signal
-from gossips.models import GossipComment, Gossip
-from question.models import QuestionComment, Question
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_text
+from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from gossips.models import Gossip, GossipComment
 from gossips.serializers import GossipCommentSerializer
+from question.models import Question, QuestionComment
 from question.serializers import QuestionCommentSerializer
-import os
+from rest_auth.registration.views import SocialLoginView
+from rest_framework import generics, status, viewsets
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from utils.signals import follow_user_signal
+
+from .models import Followers, UserLocation
+from .permissions import IsFollowerOwner, IsProfileOwner
+from .serializers import (FollowersSerializer, UserLocationSerializer,
+                          UserSerializer)
+from .tasks import send_email
+from .tokens import account_activation_token
+
+User = get_user_model()
 
 
 class FacebookLoginView(SocialLoginView):
@@ -39,7 +44,7 @@ class GoogleLoginView(SocialLoginView):
 
 
 class BaseUserView(viewsets.GenericViewSet):
-    queryset = get_user_model().objects.all()
+    queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
@@ -111,13 +116,11 @@ class ConfirmEmailAPIVIew(BaseUserView,
 
     def get(self, request, *args, **kwargs):
         try:
-            import pdb
-            pdb.set_trace()
             token = kwargs.get('token')
             uid = int(force_text(urlsafe_base64_decode(kwargs.get('uidb64'))))
-            user = get_user_model().objects.get(pk=uid)
+            user = User.objects.get(pk=uid)
 
-        except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist) as error:
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist) as error:
 
             user = None
 
@@ -136,6 +139,17 @@ class ConfirmEmailAPIVIew(BaseUserView,
         return super().update(request, *args, **kwargs)
 
 
+class ListFollowingAPIView(BaseFollowView,
+                           generics.ListAPIView):
+    """
+    List users being followed by the logged in user or follow user API Endpoints.
+    """
+
+    def get_queryset(self):
+        user = self.kwargs.get('parent_lookup_follower')
+        return Followers.objects.filter(follower=user, following=True)
+
+
 class ListFollowersAPIView(BaseFollowView,
                            generics.ListCreateAPIView):
     """
@@ -143,23 +157,49 @@ class ListFollowersAPIView(BaseFollowView,
     """
 
     def get_queryset(self):
-        return Followers.objects.filter(user=self.request.user, following=True)
+        user = self.kwargs.get('parent_lookup_user')
+        return Followers.objects.filter(user=user, following=True)
 
-    def perform_create(self, serializer):
-        instance = serializer.save(follower=self.request.user)
-        follow_user_signal.send(
-            instance=instance, user=self.request.user, created=True)
-        return instance
+    def create(self, request, *args, **kwargs):
+        # user who is following
 
+        logged_in_user = self.request.user
 
-class ListFollowingAPIView(BaseFollowView,
-                           generics.ListAPIView):
-    """
-    List user followers or follow user API Endpoints.
-    """
+        # user who is being followed
+        profile_owner_id = int(self.kwargs.get('parent_lookup_user'))
+        profile_owner = User.objects.get(pk=profile_owner_id)
 
-    def get_queryset(self):
-        return Followers.objects.filter(follower=self.request.user, following=True)
+        # user should not follow themselves
+        if logged_in_user.id != profile_owner_id:
+            # check if user is not already following them
+
+            follow_instance = Followers.objects.get(
+                user=profile_owner, follower=logged_in_user)
+
+            if not follow_instance is not None:
+                serializer = self.get_serializer(data={
+                    'user': logged_in_user.id,
+                    "follower": profile_owner_id
+                })
+
+                serializer.is_valid(raise_exception=True)
+                instance = serializer.save(
+                    user=profile_owner, follower=logged_in_user)
+
+                follow_user_signal.send(
+                    sender=Followers, instance=instance, user=profile_owner, created=True)
+
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+
+            else:
+                follow_instance.following = not follow_instance.following
+                follow_instance.save()
+
+                return Response(data=self.get_serializer(follow_instance).data,
+                                status=status.HTTP_201_CREATED)
+        else:
+            return Response(data={'error': 'user can not follow themselves'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ListUserAnswer(generics.ListAPIView):
@@ -207,7 +247,7 @@ class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
 
     permission_classes = (IsAuthenticated, IsProfileOwner)
-    queryset = get_user_model().objects.all()
+    queryset = User.objects.all()
     serializer_class = UserSerializer
 
     def update(self, request, *args, **kwargs):
@@ -220,7 +260,7 @@ class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
             topics = request.data['interested_topics'].split(',')
 
         if topics:
-            user = get_user_model().objects.filter(pk=self.request.user.id).first()
+            user = User.objects.filter(pk=self.request.user.id).first()
 
             user.interested_topics.add(**topics)
 
@@ -243,7 +283,7 @@ class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
         if 'interested_topics' in request.data:
             topics = request.data['interested_topics'].split(',')
             if topics:
-                user = get_user_model().objects.filter(pk=self.request.user.id).first()
+                user = User.objects.filter(pk=self.request.user.id).first()
 
                 for topic in topics:
                     user.interested_topics.remove(topic)
@@ -255,7 +295,7 @@ class UserInterestedTopicsAPIView(generics.RetrieveUpdateDestroyAPIView):
 class InitConfigView(generics.ListAPIView):
 
     permission_classes = ()
-    queryset = get_user_model().objects.all()
+    queryset = User.objects.all()
     serializer_class = ()
 
     def get(self, request, *args, **kwargs):
@@ -265,13 +305,13 @@ class InitConfigView(generics.ListAPIView):
         init_user_password = os.environ.get('INITIAL_PASSWORD')
 
         try:
-            user = get_user_model().objects.filter(email=init_user_email).first()
+            user = User.objects.filter(email=init_user_email).first()
 
             if user:
                 pass
             else:
-                get_user_model().objects.create_superuser(email=init_user_email,
-                                                          username=init_user_username, password=init_user_password)
+                User.objects.create_superuser(email=init_user_email,
+                                              username=init_user_username, password=init_user_password)
         except Exception as error:
             return Response(data={
                 'error': f"Failed to create initial user {error}"

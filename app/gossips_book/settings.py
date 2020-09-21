@@ -85,6 +85,7 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'gossips_book.wsgi.application'
 ASGI_APPLICATION = 'gossips_book.routing.application'
 CORS_ORIGIN_ALLOW_ALL = True
+
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -101,7 +102,7 @@ DATABASES = {
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend'
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # REST FRAMEWORK
@@ -122,7 +123,7 @@ REST_FRAMEWORK = {
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),
-    'JWT_AUTH_COOKIE': 'JWT'
+    'JWT_AUTH_COOKIE': 'JWT',
 }
 
 # Password validation
@@ -177,7 +178,7 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-REST_USE_JWT = True
+# REST_USE_JWT = True
 
 CHANNEL_LAYERS = {
     'default': {
@@ -209,7 +210,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 2
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
-
+REST_USE_JWT = True
 
 # LOGIN_REDIRECT_URL = '/'
 

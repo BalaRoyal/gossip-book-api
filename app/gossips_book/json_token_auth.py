@@ -1,9 +1,10 @@
-from rest_framework_jwt.authentication import BaseJSONWebTokenAuthentication
-from django.db import close_old_connections
-from django.contrib.auth.models import AnonymousUser
-from channels.auth import AuthMiddlewareStack
 from http import cookies
-from asgiref.sync import async_to_sync, sync_to_async
+from urllib.parse import parse_qs
+
+from channels.auth import AuthMiddlewareStack
+from django.contrib.auth.models import AnonymousUser
+from django.db import close_old_connections
+from rest_framework_jwt.authentication import BaseJSONWebTokenAuthentication
 
 
 class JsonWebTokenAuthenticationFromScope(BaseJSONWebTokenAuthentication):
@@ -13,10 +14,9 @@ class JsonWebTokenAuthenticationFromScope(BaseJSONWebTokenAuthentication):
 
     def get_jwt_value(self, scope):
         try:
-            cookie = next(x for x in scope['headers'] if x[0].decode(
-                'utf-8') == 'cookie')[1].decode('utf-8')
-            return cookies.SimpleCookie(cookie)['JWT'].value
-        except:
+            token = parse_qs(scope['query_string'].decode('utf8'))['token'][0]
+            return token
+        except Exception as error:
             return None
 
 
@@ -36,8 +36,6 @@ class JsonTokenAuthMiddleware(BaseJSONWebTokenAuthentication):
             user, jwt_value = JsonWebTokenAuthenticationFromScope().authenticate(scope)
             scope['user'] = user
         except Exception as error:
-            import pdb
-            pdb.set_trace()
             scope['user'] = AnonymousUser()
 
         return self.inner(scope)
