@@ -1,7 +1,7 @@
 
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path('', admin.site.urls),
@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/question/', include('question.urls')),
     path('api/gossip/', include('gossips.urls')),
     path('api/user-message/', include('user_message.urls')),
+    path('api/user-notifications/', include('notifications.urls'))
 ]
